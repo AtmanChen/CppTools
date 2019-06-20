@@ -1,0 +1,76 @@
+//
+//  main.cpp
+//  CaeserLanguageRTool
+//
+//  Created by 突突兔 on 6/19/19.
+//  Copyright © 2019 突突兔. All rights reserved.
+//
+
+#include <iostream>
+#include <fstream>
+#include <string>
+#include <stdexcept>
+#include <sstream>
+#include <vector>
+#include <string>
+
+using namespace std;
+
+static const char encodeTable[] = {
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x44, 0x00,
+    0x46, 0x45, 0x61, 0x33, 0x5A, 0x5F, 0x67, 0x55, 0x2E, 0x35, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x34, 0x63, 0x37, 0x48, 0x50, 0x42, 0x78, 0x57, 0x65, 0x36, 0x58, 0x51, 0x31, 0x77, 0x4B,
+    0x47, 0x7A, 0x54, 0x70, 0x52, 0x4C, 0x6D, 0x66, 0x6F, 0x76, 0x39, 0x00, 0x00, 0x00, 0x00, 0x71,
+    0x00, 0x53, 0x6E, 0x30, 0x62, 0x6A, 0x6C, 0x69, 0x79, 0x68, 0x49, 0x72, 0x4E, 0x59, 0x64, 0x56,
+    0x6B, 0x38, 0x4F, 0x75, 0x43, 0x73, 0x74, 0x41, 0x32, 0x4A, 0x4D, 0x00, 0x00, 0x00, 0x00, 0x00
+};
+
+int main(int argc, const char * argv[]) {
+    if (argc != 2) {
+        throw invalid_argument("file path needed!");
+    }
+    const string filePath = argv[1];
+    ifstream in(filePath);
+    if (!in) {
+        throw invalid_argument("file unavailable");
+    }
+    
+    vector<string> results;
+    string s;
+    while (getline(in, s)) {
+        auto localizeLocation = s.find("=");
+        if (localizeLocation == string::npos) {
+            results.push_back(s);
+            continue;
+        }
+        const string origin = s.substr(1, localizeLocation - 3);
+        const string right = s.substr(localizeLocation);
+        cout << "origin: " << origin << "\t";
+        string encode("", origin.size());
+        for (size_t i = 0; i < origin.length(); i++) {
+            encode[i] = encodeTable[origin[i]];
+        }
+        cout << "encode: " << encode << "\n";
+        const string encodeStr = string(encode);
+        string result = R"(")";
+        result += encodeStr;
+        result += R"(" )";
+        result += right;
+        result.insert(0, "$");
+        cout << "result: " << result << endl;
+        results.push_back(result);
+    }
+    in.close();
+    
+    ofstream out(filePath);
+    if (!out) {
+        throw invalid_argument("Invalid file");
+    }
+    for (const auto& str : results) {
+        out << str << "\n";
+    }
+    out.close();
+    return 0;
+}
